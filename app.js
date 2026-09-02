@@ -407,13 +407,19 @@ function initResumeUpload() {
   if (!dom.uploadBox || !dom.resumeFileInput) return;
 
   // click to browse
-  dom.uploadBox.addEventListener("click", () => dom.resumeFileInput.click());
+  dom.uploadBox.addEventListener("click", (e) => {
+    if (e.target !== dom.resumeFileInput) {
+      dom.resumeFileInput.click();
+    }
+  });
   if (dom.browseResumeBtn) {
     dom.browseResumeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       dom.resumeFileInput.click();
     });
   }
+  
+  dom.resumeFileInput.addEventListener("click", (e) => e.stopPropagation());
 
   // file selection
   dom.resumeFileInput.addEventListener("change", (e) => {
