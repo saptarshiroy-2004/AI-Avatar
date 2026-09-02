@@ -516,26 +516,56 @@ body::after {
   margin: 0 auto 1.3rem;
 }
 
-.rule-checklist {
-  text-align: left;
-  background: var(--bg-3);
-  border: 1px solid var(--bdr);
-  border-radius: var(--r-md);
-  padding: 0.85rem 1rem;
+/* resume upload */
+.resume-upload-section {
+  width: 100%;
   max-width: 480px;
-  margin: 0 auto 1.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
+  margin: 0 auto 1.4rem;
 }
 
-.check-item {
-  display: flex; align-items: flex-start;
-  gap: 8px;
-  font-size: 0.82rem;
-  color: var(--tx-2);
+.upload-box {
+  border: 2px dashed rgba(255,255,255,0.1);
+  border-radius: var(--r-md);
+  padding: 1.6rem 1.2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-3);
 }
-.check-item strong { color: var(--tx-1); }
+.upload-box:hover, .upload-box.drag-over {
+  border-color: var(--acc);
+  background: var(--acc-glow);
+}
+.upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.upload-label { font-size: 0.88rem; color: var(--tx-2); margin-bottom: 0.3rem; }
+.upload-hint { font-size: 0.7rem; color: var(--tx-3); }
+.link-btn {
+  background: none; border: none;
+  color: var(--acc); font-family: var(--f-body);
+  font-size: inherit; font-weight: 600;
+  cursor: pointer; text-decoration: underline;
+  padding: 0;
+}
+.link-btn:hover { color: #60cdfa; }
+
+.resume-status {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(74,222,128,0.08);
+  border: 1px solid rgba(74,222,128,0.2);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  text-align: left;
+}
+.resume-status-icon { font-size: 1.2rem; }
+.resume-status strong { display: block; font-size: 0.84rem; color: var(--tx-1); }
+.resume-parsed-info { display: block; font-size: 0.7rem; color: var(--acc-ok); }
+
+.start-actions {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.6rem;
+}
+.skip-note { font-size: 0.72rem; color: var(--tx-3); }
+
 
 .btn-primary-lg {
   position: relative;

@@ -160,29 +160,34 @@
           <!-- State 1: Pre-Interview Start Screen -->
           <div class="interview-idle-panel" id="idlePanel">
             <div class="idle-content">
-              <div class="shield-badge">🛡️ High-Stakes Pressure Simulation</div>
-              <h3>Test your visa interview readiness in 90 seconds</h3>
-              <p>Consular officers reject under <strong>Section 214(b)</strong> not because of bad credentials, but because of <em>rambling answers, nervous non-verbals, and scripted clichés</em>.</p>
+              <div class="shield-badge">Mock Visa Interview Simulator</div>
+              <h3>Practice your consulate interview before the real thing</h3>
+              <p>Upload your resume and the officer will ask questions based on your actual background — or skip and use standard questions.</p>
               
-              <div class="rule-checklist">
-                <div class="check-item">
-                  <span class="check-bullet">⏱️</span>
-                  <div><strong>15-Second Rule:</strong> Keep answers crisp and direct. Don't recite essays.</div>
+              <!-- Resume Upload Section -->
+              <div class="resume-upload-section" id="resumeUploadSection">
+                <div class="upload-box" id="uploadBox">
+                  <input type="file" id="resumeFileInput" accept=".pdf,.txt,.doc,.docx" hidden />
+                  <div class="upload-icon">📄</div>
+                  <p class="upload-label"><strong>Drop your resume here</strong> or <button class="link-btn" id="browseResumeBtn">browse files</button></p>
+                  <span class="upload-hint">PDF, TXT, or DOC — max 5 MB</span>
                 </div>
-                <div class="check-item">
-                  <span class="check-bullet">🗣️</span>
-                  <div><strong>Live Voice Input:</strong> Speak naturally via your mic (or type if mic is disabled).</div>
-                </div>
-                <div class="check-item">
-                  <span class="check-bullet">🎯</span>
-                  <div><strong>Dynamic Interruption:</strong> If you ramble or sound vague, the officer will probe deeper.</div>
+                <div class="resume-status hidden" id="resumeStatus">
+                  <span class="resume-status-icon">✅</span>
+                  <div>
+                    <strong id="resumeFileName">resume.pdf</strong>
+                    <span class="resume-parsed-info" id="resumeParsedInfo">Extracted key details for personalized questions</span>
+                  </div>
+                  <button class="link-btn" id="removeResumeBtn">Remove</button>
                 </div>
               </div>
 
-              <button class="btn-primary-lg" id="startInterviewBtn">
-                <span class="btn-glow"></span>
-                <span class="btn-text">🚀 Begin Consulate Simulation</span>
-              </button>
+              <div class="start-actions">
+                <button class="btn-primary-lg" id="startInterviewBtn">
+                  <span class="btn-text">Begin Interview →</span>
+                </button>
+                <span class="skip-note">Resume is optional — works fine without it too</span>
+              </div>
             </div>
           </div>
 

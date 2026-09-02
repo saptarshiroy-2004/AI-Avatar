@@ -201,12 +201,17 @@ const state = {
   isOfficerSpeaking: false,
   
   // Avatar Animation State
-  avatarState: "neutral", // neutral, skeptical, speaking, disapproving, notetaking, approving
+  avatarState: "neutral",
   avatarEyeBlink: 0,
   avatarMouthOpen: 0,
   avatarHeadTilt: 0,
   avatarEyebrowRaise: 0,
   animFrameId: null,
+
+  // Resume
+  resumeText: null,
+  resumeData: null,
+  resumeQuestions: null,
 
   // Session Results
   sessionLogs: [],
@@ -226,6 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initAvatarCanvas();
   initSpeechRecognition();
   initEventListeners();
+  initResumeUpload();
   initDeckSlides();
   startAvatarAnimationLoop();
   
@@ -312,7 +318,16 @@ function initDOMReferences() {
     nextSlideBtn: document.getElementById("nextSlideBtn"),
     slideIndicator: document.getElementById("slideIndicator"),
     slideDots: document.getElementById("slideDots"),
-    slideCards: document.querySelectorAll(".slide-card")
+    slideCards: document.querySelectorAll(".slide-card"),
+
+    // Resume upload
+    resumeFileInput: document.getElementById("resumeFileInput"),
+    uploadBox: document.getElementById("uploadBox"),
+    browseResumeBtn: document.getElementById("browseResumeBtn"),
+    resumeStatus: document.getElementById("resumeStatus"),
+    resumeFileName: document.getElementById("resumeFileName"),
+    resumeParsedInfo: document.getElementById("resumeParsedInfo"),
+    removeResumeBtn: document.getElementById("removeResumeBtn")
   };
 }
 
@@ -385,6 +400,237 @@ function initEventListeners() {
   dom.nextSlideBtn.addEventListener("click", nextSlide);
 }
 
+// ==========================================================================
+// Resume Upload & Parsing
+// ==========================================================================
+function initResumeUpload() {
+  if (!dom.uploadBox || !dom.resumeFileInput) return;
+
+  // click to browse
+  dom.uploadBox.addEventListener("click", () => dom.resumeFileInput.click());
+  if (dom.browseResumeBtn) {
+    dom.browseResumeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dom.resumeFileInput.click();
+    });
+  }
+
+  // file selection
+  dom.resumeFileInput.addEventListener("change", (e) => {
+    if (e.target.files.length > 0) handleResumeFile(e.target.files[0]);
+  });
+
+  // drag & drop
+  dom.uploadBox.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dom.uploadBox.classList.add("drag-over");
+  });
+  dom.uploadBox.addEventListener("dragleave", () => dom.uploadBox.classList.remove("drag-over"));
+  dom.uploadBox.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dom.uploadBox.classList.remove("drag-over");
+    if (e.dataTransfer.files.length > 0) handleResumeFile(e.dataTransfer.files[0]);
+  });
+
+  // remove resume
+  if (dom.removeResumeBtn) {
+    dom.removeResumeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      clearResume();
+    });
+  }
+}
+
+function handleResumeFile(file) {
+  if (file.size > 5 * 1024 * 1024) {
+    alert("File too large. Please use a file under 5 MB.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let text = e.target.result;
+    // for PDF: extract readable text (basic approach — works for text-layer PDFs)
+    if (file.type === 'application/pdf') {
+      // extract printable ASCII from PDF binary
+      text = extractTextFromPDF(text);
+    }
+    state.resumeText = text;
+    state.resumeData = parseResumeText(text);
+    state.resumeQuestions = generateResumeQuestions(state.resumeData);
+
+    // show success state
+    dom.uploadBox.classList.add("hidden");
+    dom.resumeStatus.classList.remove("hidden");
+    dom.resumeFileName.textContent = file.name;
+    const details = [];
+    if (state.resumeData.name) details.push(state.resumeData.name);
+    if (state.resumeData.university) details.push(state.resumeData.university);
+    if (state.resumeData.degree) details.push(state.resumeData.degree);
+    dom.resumeParsedInfo.textContent = details.length > 0
+      ? `Found: ${details.join(" · ")} — questions will be personalized`
+      : "Resume loaded — questions will reference your background";
+  };
+
+  if (file.type === 'application/pdf') {
+    reader.readAsBinaryString(file);
+  } else {
+    reader.readAsText(file);
+  }
+}
+
+function extractTextFromPDF(binaryStr) {
+  // lightweight client-side text extraction from PDF streams
+  // handles most single-layer text PDFs
+  let text = '';
+  try {
+    // find text between BT and ET operators
+    const btEtRegex = /BT[\s\S]*?ET/g;
+    const matches = binaryStr.match(btEtRegex) || [];
+    for (const block of matches) {
+      const tjRegex = /\(([^)]+)\)/g;
+      let m;
+      while ((m = tjRegex.exec(block)) !== null) {
+        text += m[1] + ' ';
+      }
+    }
+    // fallback: grab all printable strings
+    if (text.trim().length < 30) {
+      const printable = binaryStr.replace(/[^\x20-\x7E\n]/g, ' ');
+      text = printable.replace(/\s{3,}/g, '\n').trim();
+    }
+  } catch (e) {
+    text = binaryStr.replace(/[^\x20-\x7E\n]/g, ' ').replace(/\s{3,}/g, '\n');
+  }
+  return text;
+}
+
+function clearResume() {
+  state.resumeText = null;
+  state.resumeData = null;
+  state.resumeQuestions = null;
+  dom.resumeFileInput.value = '';
+  dom.uploadBox.classList.remove("hidden");
+  dom.resumeStatus.classList.add("hidden");
+}
+
+function parseResumeText(text) {
+  const data = { name: null, university: null, degree: null, skills: [], companies: [], gpa: null };
+  const lines = text.split(/\n/);
+
+  // name: usually the first non-empty line
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.length > 2 && trimmed.length < 60 && !/[@|http|www|phone|email]/i.test(trimmed)) {
+      data.name = trimmed;
+      break;
+    }
+  }
+
+  // university
+  const uniMatch = text.match(/(?:university|institute|college|school)\s+(?:of\s+)?([^,\n]+)/i);
+  if (uniMatch) data.university = uniMatch[0].trim().substring(0, 80);
+
+  // degree
+  const degMatch = text.match(/(?:B\.?S\.?|M\.?S\.?|B\.?Tech|M\.?Tech|B\.?E|M\.?E|B\.?A|M\.?A|MBA|Ph\.?D|Bachelor|Master)\s*(?:of|in|,)?\s*([^,\n]{3,50})/i);
+  if (degMatch) data.degree = degMatch[0].trim().substring(0, 80);
+
+  // GPA
+  const gpaMatch = text.match(/(?:GPA|CGPA)[:\s]*(\d\.\d+)/i);
+  if (gpaMatch) data.gpa = gpaMatch[1];
+
+  // skills
+  const skillKeywords = ['python', 'java', 'javascript', 'react', 'node', 'sql', 'aws', 'machine learning', 'data science', 'tensorflow', 'c\\+\\+', 'docker', 'kubernetes', 'excel', 'tableau', 'figma'];
+  for (const skill of skillKeywords) {
+    if (new RegExp(skill, 'i').test(text)) data.skills.push(skill);
+  }
+
+  // companies
+  const companyKeywords = ['google', 'amazon', 'microsoft', 'meta', 'apple', 'tcs', 'infosys', 'wipro', 'deloitte', 'accenture', 'cognizant', 'ibm', 'oracle', 'salesforce', 'stripe', 'uber'];
+  for (const co of companyKeywords) {
+    if (new RegExp('\\b' + co + '\\b', 'i').test(text)) data.companies.push(co);
+  }
+
+  return data;
+}
+
+function generateResumeQuestions(data) {
+  const questions = [];
+  const uni = data.university || 'the university you applied to';
+  const deg = data.degree || 'your chosen program';
+  const skillList = data.skills.length > 0 ? data.skills.slice(0, 3).join(', ') : 'your technical skills';
+
+  questions.push({
+    id: 'rq1',
+    question: `I see you're applying to study at ${uni}. Why this specific program over similar ones in your home country?`,
+    tip: 'Reference specific faculty, labs, or curriculum unique to this school. Tie it to a career goal back home.',
+    samples: {
+      strong: `${uni} has a specialized research track in ${skillList} that directly aligns with my goal to work in India's growing tech sector after graduating.`,
+      rambling: `I've always wanted to study abroad and the US has the best universities in the world. My friends recommended this school and I think it will be a great experience.`,
+      scripted: `This is a globally renowned institution providing world-class education to fulfill my lifelong academic aspirations.`
+    }
+  });
+
+  questions.push({
+    id: 'rq2',
+    question: 'Who is funding your education, and can you walk me through the exact financial arrangement?',
+    tip: 'State exact loan amounts, bank balances, sponsor income. Never say "my family will manage."',
+    samples: {
+      strong: 'My education is funded through an approved education loan of $45,000 from HDFC Credila, plus $20,000 in liquid savings from my father who earns $28,000 annually.',
+      rambling: 'My parents are handling it. We have enough savings and property. My uncle might help too if needed.',
+      scripted: 'My parents are my sole sponsors with sufficient funds to cover all expenses comfortably.'
+    }
+  });
+
+  if (data.companies.length > 0) {
+    questions.push({
+      id: 'rq3',
+      question: `Your resume mentions experience at ${data.companies[0]}. Why leave a good job to pursue this degree now?`,
+      tip: 'Show career progression logic. Don\'t sound like you\'re fleeing your current role.',
+      samples: {
+        strong: `At ${data.companies[0]}, I realized I needed deeper expertise in ${skillList} to move into a senior technical role. This program fills that exact gap.`,
+        rambling: 'I was getting bored at my job and wanted a change of scenery. The US seemed like a good place to explore new opportunities.',
+        scripted: 'I wish to upskill myself with cutting-edge knowledge from a prestigious global institution.'
+      }
+    });
+  } else {
+    questions.push({
+      id: 'rq3',
+      question: 'What have you been doing since your last degree? Walk me through the gap.',
+      tip: 'Account for every month. Work, certifications, or research — never say "just preparing for exams."',
+      samples: {
+        strong: 'I worked for 18 months as a Junior Analyst, building data pipelines, before deciding to specialize through this Master\'s program.',
+        rambling: 'I was mostly preparing for GRE and TOEFL and exploring some freelance work online.',
+        scripted: 'I was continuously upskilling and preparing diligently for competitive examinations.'
+      }
+    });
+  }
+
+  questions.push({
+    id: 'rq4',
+    question: 'What are your specific plans after graduation? Where do you see yourself working?',
+    tip: 'CRITICAL: Name specific companies and roles IN YOUR HOME COUNTRY. Never mention staying in the US.',
+    samples: {
+      strong: `After graduating, I plan to return to India and target senior ${skillList} roles at firms like Bosch India or Tata Advanced Systems, where US-trained specialists earn 25-30 LPA.`,
+      rambling: 'I\'d like to do OPT for 3 years and then maybe apply for H-1B if my company sponsors me.',
+      scripted: 'I will return to serve my motherland with the global knowledge I gain from US education.'
+    }
+  });
+
+  questions.push({
+    id: 'rq5',
+    question: 'Do you have any relatives currently living in the United States?',
+    tip: 'Answer directly with a Yes or No. If yes, specify relationship and their visa status.',
+    samples: {
+      strong: 'No, officer. My entire immediate family — parents and younger brother — lives in Pune, India.',
+      rambling: 'My cousin moved to Texas a few years ago and my aunt is in Chicago, but I won\'t be visiting them.',
+      scripted: 'No immediate family members reside in the United States of America.'
+    }
+  });
+
+  return questions;
+}
+
 function switchTab(viewId) {
   [dom.viewSimulator, dom.viewDeck, dom.viewValidation].forEach(v => v.classList.remove("active", "hidden"));
   [dom.tabSimulatorBtn, dom.tabDeckBtn, dom.tabValidationBtn].forEach(t => t.classList.remove("active"));
@@ -415,11 +661,19 @@ function updateOfficerDisplay() {
   dom.currentOfficerName.textContent = officer.name;
   dom.officerSubheading.textContent = officer.subheading;
   
-  const currentQuestions = QUESTION_BANKS[state.currentTrack];
+  const currentQuestions = getActiveQuestions();
   const initialQ = currentQuestions[0].question;
   dom.officerSpokenText.textContent = `"${initialQ}"`;
   dom.questionCounter.textContent = `Question 1 of ${currentQuestions.length}`;
   dom.liveTipText.innerHTML = `<strong>Officer Insight:</strong> ${currentQuestions[0].tip}`;
+}
+
+function getActiveQuestions() {
+  // use resume-based questions if a resume was uploaded, otherwise use default bank
+  if (state.resumeQuestions && state.resumeQuestions.length > 0) {
+    return state.resumeQuestions;
+  }
+  return QUESTION_BANKS[state.currentTrack];
 }
 
 function startInterview() {
@@ -439,7 +693,7 @@ function startInterview() {
 }
 
 function loadQuestion(index) {
-  const currentQuestions = QUESTION_BANKS[state.currentTrack];
+  const currentQuestions = getActiveQuestions();
   if (index >= currentQuestions.length) {
     finishInterview();
     return;
@@ -514,7 +768,7 @@ function updateConcisenessBadge(seconds) {
 }
 
 function injectSampleAnswer(type) {
-  const currentQuestions = QUESTION_BANKS[state.currentTrack];
+  const currentQuestions = getActiveQuestions();
   const qData = currentQuestions[state.currentQuestionIndex];
   if (!qData.samples || !qData.samples[type]) return;
 
@@ -538,7 +792,7 @@ function handleAnswerSubmission() {
   const elapsedSec = Math.floor((Date.now() - state.questionStartTime) / 1000);
 
   // Analyze Answer
-  const currentQuestions = QUESTION_BANKS[state.currentTrack];
+  const currentQuestions = getActiveQuestions();
   const qData = currentQuestions[state.currentQuestionIndex];
   const evaluation = evaluateAnswer(qData, answer, elapsedSec);
 
@@ -856,7 +1110,7 @@ function speakOfficerText(text) {
 }
 
 function replayOfficerSpeech() {
-  const currentQuestions = QUESTION_BANKS[state.currentTrack];
+  const currentQuestions = getActiveQuestions();
   const qData = currentQuestions[state.currentQuestionIndex];
   if (qData) {
     setAvatarState("speaking", 3500);
