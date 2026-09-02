@@ -1,6 +1,9 @@
 # ConsulAI — AI Visa Officer Interview Simulator
 > **Product Intern Assignment: Build & Validate an AI Avatar Product**
 
+**🌐 Live Deployed URL:** [https://saptarshiroy-2004.github.io/AI-Avatar/](https://saptarshiroy-2004.github.io/AI-Avatar/)  
+**📁 GitHub Repo:** [https://github.com/saptarshiroy-2004/AI-Avatar](https://github.com/saptarshiroy-2004/AI-Avatar)  
+
 ConsulAI is an interactive, voice-enabled AI Consular Officer avatar that subjects visa applicants (F-1, B-1/B-2, H-1B) to realistic 90-second interview pressure, reacts in real-time to non-verbals and rambling, and delivers an instant 214(b) diagnostic report.
 
 ---

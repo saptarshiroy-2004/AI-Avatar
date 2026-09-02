@@ -3,7 +3,8 @@
 **Candidate:** Saptarshi Roy  
 **Product:** ConsulAI — AI Consular Officer Interview Simulator  
 **Submission Date:** Wednesday, September 2, 2026  
-**Live Demo / Prototype:** [Open index.html locally or deploy via GitHub Pages]  
+**Live Deployed Product:** [https://saptarshiroy-2004.github.io/AI-Avatar/](https://saptarshiroy-2004.github.io/AI-Avatar/)  
+**GitHub Repository:** [https://github.com/saptarshiroy-2004/AI-Avatar](https://github.com/saptarshiroy-2004/AI-Avatar)  
 
 ---
 
