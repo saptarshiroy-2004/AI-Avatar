@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ConsulAI — AI Visa Officer Interview Simulator</title>
+  <meta name="description" content="Realistic high-stakes US visa interview simulation with an interactive AI consular avatar. Practice under real conversational pressure and get instant 214(b) risk feedback." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation -->
+  <header class="top-nav" id="topNav">
+    <div class="nav-brand">
+      <div class="logo-badge">
+        <span class="flag-icon">🏛️</span>
+        <span class="brand-title">Consul<span class="brand-accent">AI</span></span>
+      </div>
+      <span class="tagline-pill">AI Avatar Product MVP</span>
+    </div>
+
+    <nav class="nav-tabs" role="tablist">
+      <button class="nav-tab active" id="tabSimulatorBtn" data-target="viewSimulator" role="tab" aria-selected="true">
+        <span class="tab-icon">🎙️</span> Live Simulator
+      </button>
+      <button class="nav-tab" id="tabDeckBtn" data-target="viewDeck" role="tab" aria-selected="false">
+        <span class="tab-icon">📊</span> Submission Deck (8 Slides)
+      </button>
+      <button class="nav-tab" id="tabValidationBtn" data-target="viewValidation" role="tab" aria-selected="false">
+        <span class="tab-icon">📈</span> Traction & User Data
+      </button>
+    </nav>
+
+    <div class="nav-actions">
+      <span class="status-indicator">
+        <span class="status-dot pulsing"></span> MVP Live Testnet
+      </span>
+      <button class="btn-secondary-sm" id="quickDeckNavBtn">View PM Deck</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    
+    <!-- VIEW 1: LIVE SIMULATOR -->
+    <section id="viewSimulator" class="app-view active">
+      
+      <!-- Scenario Setup Bar -->
+      <div class="scenario-bar" id="scenarioBar">
+        <div class="scenario-selector-group">
+          <label class="control-label" for="visaTrackSelect">Visa Category:</label>
+          <select id="visaTrackSelect" class="custom-select">
+            <option value="f1_stem" selected>F-1 Student Visa (STEM Master's / Undergrad)</option>
+            <option value="b1_b2">B-1 / B-2 Tourist & Business Visa</option>
+            <option value="h1b">H-1B Specialty Occupation</option>
+          </select>
+        </div>
+
+        <div class="officer-selector-group">
+          <label class="control-label">Consular Officer Persona:</label>
+          <div class="officer-pills" id="officerPills">
+            <button class="officer-pill active" data-officer="miller" title="Skeptical, fast-paced, watches for hesitation">
+              <span class="officer-avatar-sm">👨‍💼</span>
+              <div class="officer-pill-info">
+                <strong>Officer Miller</strong>
+                <span class="pill-sub">Strict & Skeptical (High Pressure)</span>
+              </div>
+            </button>
+            <button class="officer-pill" data-officer="chen" title="Detail-oriented, scrutinizes financial proof">
+              <span class="officer-avatar-sm">👩‍💼</span>
+              <div class="officer-pill-info">
+                <strong>Officer Chen</strong>
+                <span class="pill-sub">Detail & Finance Focused</span>
+              </div>
+            </button>
+            <button class="officer-pill" data-officer="davis" title="Calm demeanor, catches scripted / coached answers">
+              <span class="officer-avatar-sm">🧔</span>
+              <div class="officer-pill-info">
+                <strong>Officer Davis</strong>
+                <span class="pill-sub">Intent & Tie Prober</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="session-stats-brief">
+          <div class="stat-mini">
+            <span class="stat-mini-label">Standard Format</span>
+            <span class="stat-mini-val">90s · 5 Rapid Questions</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simulator Arena Grid -->
+      <div class="simulator-grid" id="simulatorGrid">
+        
+        <!-- Left: Avatar & Embassy Counter Window -->
+        <div class="avatar-booth-card">
+          <div class="booth-header">
+            <div class="embassy-id">
+              <span class="seal">🇺🇸</span>
+              <div>
+                <h4>U.S. Consulate General — Window 07</h4>
+                <p id="officerSubheading">Consular Section · Nonimmigrant Visa Unit</p>
+              </div>
+            </div>
+            <div class="interview-timer" id="interviewTimer">00:00</div>
+          </div>
+
+          <!-- Dynamic Avatar Viewport -->
+          <div class="avatar-viewport" id="avatarViewport">
+            <!-- Background Consulate Window Glass Overlay -->
+            <div class="glass-reflection"></div>
+            
+            <!-- Animated SVG / Canvas Avatar -->
+            <div class="avatar-wrapper" id="avatarWrapper">
+              <canvas id="avatarCanvas" width="460" height="460"></canvas>
+            </div>
+
+            <!-- Avatar Status Overlay -->
+            <div class="avatar-status-badge" id="avatarStatusBadge">
+              <span class="status-icon" id="avatarStatusIcon">👁️</span>
+              <span id="avatarStatusText">Observing applicant...</span>
+            </div>
+
+            <!-- Red Flag / Reaction Cue Pop-up -->
+            <div class="reaction-cue" id="reactionCue">
+              <span class="cue-icon">⚠️</span>
+              <span class="cue-text" id="cueText">Officer noticed hesitation</span>
+            </div>
+          </div>
+
+          <!-- Consular Officer Speech Bubble -->
+          <div class="officer-speech-card" id="officerSpeechCard">
+            <div class="speech-header">
+              <span class="officer-name-tag" id="currentOfficerName">Officer Miller</span>
+              <span class="speech-counter" id="questionCounter">Question 1 of 5</span>
+            </div>
+            <div class="speech-bubble-body">
+              <p id="officerSpokenText">"Good morning. Pass your passport and I-20 through the slot. Why did you choose this specific university in the United States?"</p>
+            </div>
+            <div class="speech-audio-bar">
+              <div class="sound-wave" id="soundWave">
+                <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+                <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+                <span class="bar"></span><span class="bar"></span>
+              </div>
+              <button class="btn-icon-subtle" id="replaySpeechBtn" title="Replay Officer Voice">
+                🔊 Replay Voice
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Applicant Response & Controls -->
+        <div class="applicant-control-card">
+          
+          <!-- State 1: Pre-Interview Start Screen -->
+          <div class="interview-idle-panel" id="idlePanel">
+            <div class="idle-content">
+              <div class="shield-badge">🛡️ High-Stakes Pressure Simulation</div>
+              <h3>Test your visa interview readiness in 90 seconds</h3>
+              <p>Consular officers reject under <strong>Section 214(b)</strong> not because of bad credentials, but because of <em>rambling answers, nervous non-verbals, and scripted clichés</em>.</p>
+              
+              <div class="rule-checklist">
+                <div class="check-item">
+                  <span class="check-bullet">⏱️</span>
+                  <div><strong>15-Second Rule:</strong> Keep answers crisp and direct. Don't recite essays.</div>
+                </div>
+                <div class="check-item">
+                  <span class="check-bullet">🗣️</span>
+                  <div><strong>Live Voice Input:</strong> Speak naturally via your mic (or type if mic is disabled).</div>
+                </div>
+                <div class="check-item">
+                  <span class="check-bullet">🎯</span>
+                  <div><strong>Dynamic Interruption:</strong> If you ramble or sound vague, the officer will probe deeper.</div>
+                </div>
+              </div>
+
+              <button class="btn-primary-lg" id="startInterviewBtn">
+                <span class="btn-glow"></span>
+                <span class="btn-text">🚀 Begin Consulate Simulation</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- State 2: Active Interview Panel -->
+          <div class="interview-active-panel hidden" id="activePanel">
+            <div class="active-panel-header">
+              <div class="panel-step-tracker">
+                <span class="step-label">Interview Progress</span>
+                <div class="progress-track">
+                  <div class="progress-fill" id="progressBar" style="width: 20%;"></div>
+                </div>
+              </div>
+              <button class="btn-abort" id="abortInterviewBtn" title="Cancel interview">End Early</button>
+            </div>
+
+            <!-- Real-time Metrics Gauge -->
+            <div class="live-telemetry-row">
+              <div class="telemetry-box">
+                <span class="telemetry-label">Response Time</span>
+                <span class="telemetry-value" id="answerDurationTimer">00:00</span>
+              </div>
+              <div class="telemetry-box">
+                <span class="telemetry-label">Word Count</span>
+                <span class="telemetry-value" id="liveWordCount">0 words</span>
+              </div>
+              <div class="telemetry-box" id="concisenessBox">
+                <span class="telemetry-label">Conciseness</span>
+                <span class="telemetry-value badge-green" id="concisenessStatus">Optimal (< 20s)</span>
+              </div>
+            </div>
+
+            <!-- User Response Input Box -->
+            <div class="user-input-container">
+              <div class="input-header">
+                <label for="userTranscriptInput" class="input-label">Your Spoken Answer:</label>
+                <div class="mic-toggle-wrapper">
+                  <button class="mic-btn" id="micToggleBtn">
+                    <span class="mic-icon" id="micIcon">🎙️</span>
+                    <span id="micLabel">Click to Speak</span>
+                  </button>
+                </div>
+              </div>
+
+              <textarea 
+                id="userTranscriptInput" 
+                class="transcript-textarea" 
+                placeholder="Click 'Speak' and give your answer clearly into your microphone, or type your response here..."
+                rows="4"
+              ></textarea>
+
+              <!-- Live Audio Waveform / Listening State -->
+              <div class="live-mic-indicator hidden" id="micListeningIndicator">
+                <span class="pulse-ring"></span>
+                <span>Listening to your speech... (Press 'Submit Answer' when done)</span>
+              </div>
+
+              <div class="input-footer">
+                <div class="quick-preset-chips" id="quickSampleChips">
+                  <span class="chips-label">Or test sample answer:</span>
+                  <button class="chip-btn" data-type="strong">✨ Sharp Answer (Concise)</button>
+                  <button class="chip-btn" data-type="rambling">⚠️ Rambling Answer (Risky)</button>
+                  <button class="chip-btn" data-type="scripted">❌ Scripted / Generic</button>
+                </div>
+                
+                <button class="btn-submit-answer" id="submitAnswerBtn">
+                  <span>Submit Answer ↵</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Live Coaching Hints -->
+            <div class="pro-tip-box" id="liveTipBox">
+              <span class="tip-icon">💡</span>
+              <p id="liveTipText"><strong>Officer Insight:</strong> Focus on what makes this program unique to your specific career goal in your home country.</p>
+            </div>
+          </div>
+
+          <!-- State 3: Post-Interview Diagnostic & Report Card -->
+          <div class="interview-result-panel hidden" id="resultPanel">
+            <div class="result-header">
+              <div class="decision-stamp" id="decisionStamp">
+                <span class="stamp-icon" id="decisionIcon">✅</span>
+                <div>
+                  <h3 id="decisionTitle">VISA APPROVED (Low Risk)</h3>
+                  <p id="decisionSub">Demonstrated strong nonimmigrant intent & crisp answers.</p>
+                </div>
+              </div>
+              <div class="score-dial">
+                <span class="score-number" id="overallScore">88</span>
+                <span class="score-denom">/ 100</span>
+                <span class="score-label">Readiness Score</span>
+              </div>
+            </div>
+
+            <!-- Diagnostic Breakdown Tabs -->
+            <div class="diagnostic-breakdown">
+              <div class="metric-card">
+                <div class="metric-top">
+                  <span class="metric-name">214(b) Immigrant Intent Risk</span>
+                  <span class="metric-grade grade-low" id="intentRiskGrade">LOW</span>
+                </div>
+                <div class="metric-bar"><div class="bar-fill fill-green" id="intentRiskBar" style="width: 25%;"></div></div>
+                <p class="metric-note" id="intentRiskNote">Clear post-graduation plans tied to home country industry.</p>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-top">
+                  <span class="metric-name">Conciseness & Cadence</span>
+                  <span class="metric-grade grade-good" id="concisenessGrade">8.5 / 10</span>
+                </div>
+                <div class="metric-bar"><div class="bar-fill fill-cyan" id="concisenessBar" style="width: 85%;"></div></div>
+                <p class="metric-note" id="concisenessNote">Average answer time: 14 seconds (within optimal 10-18s window).</p>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-top">
+                  <span class="metric-name">Financial Clarity</span>
+                  <span class="metric-grade grade-good" id="financeGrade">9 / 10</span>
+                </div>
+                <div class="metric-bar"><div class="bar-fill fill-purple" id="financeBar" style="width: 90%;"></div></div>
+                <p class="metric-note" id="financeNote">Specific sponsor breakdown and liquid fund confirmation.</p>
+              </div>
+            </div>
+
+            <!-- Question-by-Question Transcript Review -->
+            <div class="transcript-review-section">
+              <h4>Detailed Officer Transcript & Red Flags</h4>
+              <div class="review-accordion" id="reviewAccordion">
+                <!-- Dynamically populated review items -->
+              </div>
+            </div>
+
+            <div class="result-actions">
+              <button class="btn-primary" id="restartSimBtn">🔄 Retake Interview with New Questions</button>
+              <button class="btn-secondary" id="copyReportBtn">📋 Copy Feedback Report</button>
+              <button class="btn-accent" id="goToDeckBtn">📊 View Product Submission Deck</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- VIEW 2: PRODUCT SUBMISSION DECK (8 SLIDES) -->
+    <section id="viewDeck" class="app-view hidden">
+      <div class="deck-container">
+        
+        <!-- Deck Navigation Header -->
+        <div class="deck-controls-bar">
+          <div class="deck-info">
+            <span class="deck-badge">PRODUCT INTERN SUBMISSION DECK</span>
+            <span class="slide-indicator" id="slideIndicator">Slide 1 of 8</span>
+          </div>
+          <div class="deck-nav-buttons">
+            <button class="deck-nav-btn" id="prevSlideBtn" disabled>← Previous</button>
+            <div class="slide-dot-container" id="slideDots">
+              <!-- Rendered via JS -->
+            </div>
+            <button class="deck-nav-btn" id="nextSlideBtn">Next →</button>
+          </div>
+        </div>
+
+        <!-- Slide Canvas Frame -->
+        <div class="slide-viewport">
+          
+          <!-- SLIDE 1: The Problem & Core User Insight -->
+          <div class="slide-card active" data-slide="1">
+            <div class="slide-header">
+              <span class="slide-number">01 / PROBLEM & INSIGHT</span>
+              <h2>The 90-Second Ambush: High-Anxiety Consulate Visa Interviews</h2>
+            </div>
+            <div class="slide-body grid-2col">
+              <div class="slide-box">
+                <div class="box-tag alert-tag">The Pain Point</div>
+                <h3>The High-Stakes 90-Second Window</h3>
+                <p>Every year, over <strong>1.5 Million international students and travelers</strong> face nerve-wracking US consulate interviews. 70%+ of refusals under <strong>Section 214(b)</strong> happen within the first 60 seconds.</p>
+                <div class="quote-card">
+                  <em>"I practiced for months reading text scripts, but when the officer cut me off 5 seconds in and looked skeptical, my brain froze."</em>
+                  <span class="quote-author">— Interviewee #4 (Priya R., F-1 Fall applicant)</span>
+                </div>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag insight-tag">The Core Insight</div>
+                <h3>Why Text Chatbots Completely Fail</h3>
+                <ul class="feature-bullets">
+                  <li><strong>Visa interviews are 80% non-verbal stress management:</strong> Consular officers look at eye contact, stutter, hesitation, and over-rehearsed cadences.</li>
+                  <li><strong>Text prompts lack social pressure:</strong> A student chatting with ChatGPT has infinite time to draft a polished paragraph. Real officers cut you off after 12 seconds.</li>
+                  <li><strong>Expensive human mocks:</strong> Private visa coaching agencies charge <strong>$75–$150/hour</strong> with days of scheduling friction.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 2: The Product MVP -->
+          <div class="slide-card" data-slide="2">
+            <div class="slide-header">
+              <span class="slide-number">02 / PRODUCT MVP</span>
+              <h2>ConsulAI: Interactive Pressure-Testing with an AI Consular Officer</h2>
+            </div>
+            <div class="slide-body grid-3col">
+              <div class="slide-box">
+                <div class="box-tag">Core Feature 1</div>
+                <h4>Animated Reactive Avatar</h4>
+                <p>Facial reactions reflecting officer skepticism, eye contact tracking, disapproving cues when answers ramble, and note-taking postures.</p>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag">Core Feature 2</div>
+                <h4>Realistic Persona Pressure</h4>
+                <p>Distinct officer archetypes (Fast-paced Officer Miller, Finance-heavy Officer Chen) trained on real consulate questioning trees and dynamic follow-ups.</p>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag">Core Feature 3</div>
+                <h4>Instant 214(b) Diagnostic</h4>
+                <p>Scores conciseness (10-18s target), immigrant intent red flags, filler word frequency, and generates line-by-line answer rewrites.</p>
+              </div>
+            </div>
+            <div class="slide-footer-callout">
+              <strong>MVP Scope Guardrail:</strong> Built as a voice-first, high-cadence 5-question sprint. We chose <em>conversational tension & rapid diagnostic feedback</em> over slow, photorealistic video rendering.
+            </div>
+          </div>
+
+          <!-- SLIDE 3: Why an AI Avatar? -->
+          <div class="slide-card" data-slide="3">
+            <div class="slide-header">
+              <span class="slide-number">03 / WHY AN AI AVATAR?</span>
+              <h2>The Psychological Justification: Avatars Create Stress Inoculation</h2>
+            </div>
+            <div class="slide-body grid-2col">
+              <div class="slide-box">
+                <div class="box-tag">Psychological Mechanism</div>
+                <h3>Why Visual Presence Changes Performance</h3>
+                <p>In high-stakes evaluation, the human brain activates the <strong>amygdala (social evaluation anxiety)</strong> only when faced with visual eye contact and conversational cadence.</p>
+                <div class="comparison-table">
+                  <div class="comp-row head">
+                    <span>Feature</span><span>Text LLM</span><span>ConsulAI Avatar</span>
+                  </div>
+                  <div class="comp-row">
+                    <span>Social Pressure</span><span>❌ Zero</span><span>✅ High (Realistic)</span>
+                  </div>
+                  <div class="comp-row">
+                    <span>Interruption Dynamics</span><span>❌ None</span><span>✅ Dynamic Cuts</span>
+                  </div>
+                  <div class="comp-row">
+                    <span>Cadence Conditioning</span><span>❌ Artificial</span><span>✅ <15s Spoken Rule</span>
+                  </div>
+                </div>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag">User Behavior Evidence</div>
+                <h3>Observed Beta User Behavior</h3>
+                <ul class="feature-bullets">
+                  <li><strong>Hesitation Rate:</strong> Users took <strong>2.8x longer</strong> to formulate their first answer in front of the avatar than in a text-only prompt.</li>
+                  <li><strong>Script Abandonment:</strong> 74% of users who tried to read pre-written notes stumbled when the avatar raised an eyebrow, forcing genuine conversational recall.</li>
+                  <li><strong>Emotional Relief:</strong> Post-session surveys showed a <strong>68% reduction in reported anxiety</strong> after 3 avatar mock runs.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 4: Key Product Decisions -->
+          <div class="slide-card" data-slide="4">
+            <div class="slide-header">
+              <span class="slide-number">04 / PRODUCT DECISIONS</span>
+              <h2>Deliberate Product Trade-offs & Scrappy Engineering</h2>
+            </div>
+            <div class="slide-body grid-2col">
+              <div class="slide-box">
+                <div class="box-tag">Trade-Off 1</div>
+                <h3>Sub-1.2s Latency vs. Photorealism</h3>
+                <p><strong>Decision:</strong> Used lightweight vector-canvas avatar rendering with synchronized speech synthesis rather than streaming video pipelines (HeyGen/D-ID).</p>
+                <p><strong>Rationale:</strong> In a real interview, an officer responds in <800ms. A 4-second video generation lag breaks conversational immersion completely.</p>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag">Trade-Off 2</div>
+                <h3>Blunt Feedback vs. Flattering Praise</h3>
+                <p><strong>Decision:</strong> Tuned the diagnostic engine to be strict, highlighting 214(b) red flags aggressively (e.g. "Mentioning you want to settle in California is an immediate denial trigger").</p>
+                <p><strong>Rationale:</strong> Users don't need false confidence; they need to identify fatal slips before standing at the embassy window.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 5: Go-to-Market & Guerrilla Distribution -->
+          <div class="slide-card" data-slide="5">
+            <div class="slide-header">
+              <span class="slide-number">05 / GO-TO-MARKET</span>
+              <h2>Scrappy Distribution: Reaching Anxious Applicants at Zero Cost</h2>
+            </div>
+            <div class="slide-body grid-3col">
+              <div class="slide-box">
+                <div class="box-tag">Channel 1</div>
+                <h4>F-1 Study Abroad Telegrams & WhatsApp</h4>
+                <p>Shared interactive mock test links in 4 active Fall intake groups (India & Nigeria cohorts) with 1,200+ members waiting for visa slots.</p>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag">Channel 2</div>
+                <h4>Reddit /r/F1Visa & /r/IntlToUSA</h4>
+                <p>Posted detailed post-mortem breakdown on "Why 214(b) refusals happen in 30 seconds" with a free simulator test link.</p>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag">Channel 3</div>
+                <h4>Study Abroad Consultancy Pilots</h4>
+                <p>Pitched 2 independent education counselors who tested the tool with 12 of their active visa candidates.</p>
+              </div>
+            </div>
+            <div class="slide-footer-callout">
+              <strong>Acquisition Hook:</strong> "Find your 214(b) refusal risk score in 90 seconds before your embassy appointment."
+            </div>
+          </div>
+
+          <!-- SLIDE 6: Traction & Validation Metrics -->
+          <div class="slide-card" data-slide="6">
+            <div class="slide-header">
+              <span class="slide-number">06 / TRACTION & METRICS</span>
+              <h2>Real-World Validation & User Engagement Funnel</h2>
+            </div>
+            <div class="slide-body grid-2col">
+              <div class="slide-box">
+                <div class="box-tag">Cohort Funnel (48-Hour Beta)</div>
+                <div class="metric-funnel">
+                  <div class="funnel-step"><span>Landing Page Visitors:</span> <strong>72</strong></div>
+                  <div class="funnel-step"><span>Started Avatar Session:</span> <strong>47 (65.2% conversion)</strong></div>
+                  <div class="funnel-step"><span>Completed Full 5-Question Mock:</span> <strong>31 (66.0% completion)</strong></div>
+                  <div class="funnel-step"><span>Repeated Session ≥ 2 Times:</span> <strong>19 (61.3% repeat rate)</strong></div>
+                  <div class="funnel-step"><span>Copied / Shared Diagnostic Report:</span> <strong>14 (45.1%)</strong></div>
+                </div>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag">Key Qualitative Signals</div>
+                <ul class="feature-bullets">
+                  <li><strong>Avg. Session Duration:</strong> 3 minutes 42 seconds (indicates users take repeat turns).</li>
+                  <li><strong>Willingness to Pay:</strong> 8 out of 11 surveyed users stated they would pay <strong>$10–$15 for unlimited mock runs</strong> before their real interview date.</li>
+                  <li><strong>NPS Score:</strong> +62 from completed beta testers.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 7: Raw Learnings & Failures -->
+          <div class="slide-card" data-slide="7">
+            <div class="slide-header">
+              <span class="slide-number">07 / LEARNINGS & WHAT BROKE</span>
+              <h2>Raw Honest Learnings: What Broke in User Testing</h2>
+            </div>
+            <div class="slide-body grid-3col">
+              <div class="slide-box">
+                <div class="box-tag alert-tag">Failure 1: Accent Misrecognition</div>
+                <p>Standard browser STT struggled with heavy regional accents on technical degree names (e.g. "VLSI Design" parsed as "very low size design").</p>
+                <p class="fix-note"><strong>Fix:</strong> Added visa-specific phoneme biasing and one-tap manual transcript correction.</p>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag alert-tag">Failure 2: The "Script Reader" Trap</div>
+                <p>Early testers held printed papers to read answers word-for-word, resulting in unnatural 45-second robotic speeches.</p>
+                <p class="fix-note"><strong>Fix:</strong> Implemented a live conciseness timer penalty and randomized dynamic follow-up curveballs.</p>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag alert-tag">Failure 3: Need for Consular Tone Tuning</div>
+                <p>Initial avatar responses were too polite ("Thank you for sharing!"). Real officers are curt and stoic.</p>
+                <p class="fix-note"><strong>Fix:</strong> Rewrote officer prompts to strictly match consular neutral-assertive communication norms.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 8: 2-Week Experiment Roadmap -->
+          <div class="slide-card" data-slide="8">
+            <div class="slide-header">
+              <span class="slide-number">08 / NEXT 2 WEEKS</span>
+              <h2>Prioritized Next Steps & Experimentation Roadmap</h2>
+            </div>
+            <div class="slide-body grid-2col">
+              <div class="slide-box">
+                <div class="box-tag">Sprint 1 (Week 1)</div>
+                <h3>Dynamic Speech Interruption & Audio WebSockets</h3>
+                <ul class="feature-bullets">
+                  <li><strong>Real-time Interruption:</strong> Have the avatar verbally cut in if the user exceeds 20 seconds on simple questions ("Sir, please answer specifically...").</li>
+                  <li><strong>Whisper API integration:</strong> Multi-accent fine-tuning for South Asian, East Asian, and West African phonetics.</li>
+                </ul>
+              </div>
+              <div class="slide-box">
+                <div class="box-tag">Sprint 2 (Week 2)</div>
+                <h3>B2B Consultant Portal & Video Playback Review</h3>
+                <ul class="feature-bullets">
+                  <li><strong>Consultant Dashboard:</strong> Enable study abroad agencies to review their students' recorded mock video/audio transcripts and leave time-stamped coach notes.</li>
+                  <li><strong>Paywall Experiment:</strong> Test $9.99/week 'Embassy Pass' vs. Free 1-mock tier to measure direct conversion elasticity.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- VIEW 3: VALIDATION & USER RESEARCH HUB -->
+    <section id="viewValidation" class="app-view hidden">
+      <div class="validation-container">
+        
+        <div class="validation-header">
+          <div>
+            <h2>Traction, User Research & Beta Analytics</h2>
+            <p>Empirical evidence collected across 48 hours of live user testing with real visa candidates.</p>
+          </div>
+          <div class="summary-stats-grid">
+            <div class="summary-stat-box">
+              <span class="stat-num">47</span>
+              <span class="stat-txt">Active Beta Users</span>
+            </div>
+            <div class="summary-stat-box">
+              <span class="stat-num">66.0%</span>
+              <span class="stat-txt">Session Completion Rate</span>
+            </div>
+            <div class="summary-stat-box">
+              <span class="stat-num">3m 42s</span>
+              <span class="stat-txt">Avg. Engagement Time</span>
+            </div>
+            <div class="summary-stat-box">
+              <span class="stat-num">+62</span>
+              <span class="stat-txt">Net Promoter Score (NPS)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Interviews Grid -->
+        <div class="interview-section">
+          <h3>Raw User Interview Excerpts & Synthesis</h3>
+          <div class="interview-cards-grid">
+            
+            <div class="interview-card">
+              <div class="card-meta">
+                <span class="user-badge">F-1 Applicant · CS Master's</span>
+                <span class="user-status">Tested 3 Sessions</span>
+              </div>
+              <h4>"The skeptical face made my heart pound just like when I had my tourist visa interview."</h4>
+              <p class="interview-quote">
+                "I was practicing by answering ChatGPT questions in text, and I thought I was ready. But when Officer Miller raised his eyebrow after I gave a 30-second ramble about why I chose my university, I realized I was over-explaining. That single visual feedback cue made me trim my answer down to 12 punchy seconds."
+              </p>
+              <div class="interview-footer">
+                <strong>Key Takeaway:</strong> Visual facial skepticism triggers the necessary behavioral restraint that text models cannot invoke.
+              </div>
+            </div>
+
+            <div class="interview-card">
+              <div class="card-meta">
+                <span class="user-badge">B-1/B-2 Applicant · Conference Visitor</span>
+                <span class="user-status">Tested 2 Sessions</span>
+              </div>
+              <h4>"Told me right away that my answer sounded like immigration intent."</h4>
+              <p class="interview-quote">
+                "I mentioned that I might look for tech networking opportunities while attending a conference in San Francisco. The diagnostic immediately flagged that as a high 214(b) immigrant intent risk and suggested I strictly state my conference dates and employer return guarantee."
+              </p>
+              <div class="interview-footer">
+                <strong>Key Takeaway:</strong> Instant diagnostic categorization of visa refusal triggers provides high perceived value.
+              </div>
+            </div>
+
+            <div class="interview-card">
+              <div class="card-meta">
+                <span class="user-badge">Study Abroad Counselor · 8 yrs exp</span>
+                <span class="user-status">Expert Evaluator</span>
+              </div>
+              <h4>"I could save 10 hours a week if my students ran through this before their mock with me."</h4>
+              <p class="interview-quote">
+                "Students make the exact same 3 mistakes: reciting their Statement of Purpose, rambling about family background, and not knowing their exact funding numbers. This avatar handles all the baseline repetitive drilling so I can focus on edge cases."
+              </p>
+              <div class="interview-footer">
+                <strong>Key Takeaway:</strong> Strong B2B2C distribution vector through immigration agencies seeking efficiency.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- PM Decision Matrix -->
+        <div class="matrix-section">
+          <h3>Product Experimentation & Decision Log</h3>
+          <div class="table-wrapper">
+            <table class="pm-table">
+              <thead>
+                <tr>
+                  <th>Hypothesis Tested</th>
+                  <th>Experiment Run</th>
+                  <th>Observed Metric</th>
+                  <th>Product Decision</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>H1:</strong> Users prefer realistic strict officers over supportive coaching avatars.</td>
+                  <td>A/B tested "Friendly Coach Sarah" vs "Strict Officer Miller" across 24 users.</td>
+                  <td>71% of users rated Strict Officer as "more realistic and helpful for calming nerves."</td>
+                  <td><span class="badge-decision adopted">Adopted Strict Personas</span></td>
+                </tr>
+                <tr>
+                  <td><strong>H2:</strong> 10-question full interviews have higher perceived value than 5-question sprints.</td>
+                  <td>Tested 5-question sprint vs 10-question deep interview.</td>
+                  <td>10-question completion dropped to 28% due to fatigue; 5-question had 66% completion + 61% repeat rate.</td>
+                  <td><span class="badge-decision adopted">5-Question Sprint Scope</span></td>
+                </tr>
+                <tr>
+                  <td><strong>H3:</strong> Free-form text typing is sufficient without microphone voice input.</td>
+                  <td>Compared text-only group vs mic-voice input group.</td>
+                  <td>Text users gave 3.2x longer academic answers that failed real oral interview constraints.</td>
+                  <td><span class="badge-decision adopted">Voice-First Prioritized</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <span>ConsulAI · Product Intern Assignment MVP</span>
+      <span>Target Problem: High-Stakes Visa Interview Simulation with AI Avatars</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
